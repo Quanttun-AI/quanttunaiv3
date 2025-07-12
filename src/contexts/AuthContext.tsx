@@ -112,19 +112,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateUser = async (updates: Partial<User>) => {
     if (!user) return;
     
-    setLoading(true);
     try {
-      console.log('Atualizando dados do usuário...');
+      console.log('Atualizando dados do usuário no Supabase...', updates);
       
-      await supabaseClient.updateUser(user.email, updates);
+      // Atualizar no Supabase primeiro
+      const updatedData = await supabaseClient.updateUser(user.email, updates);
+      console.log('Dados atualizados no Supabase:', updatedData);
+      
+      // Atualizar o estado local e localStorage
       const updatedUser = { ...user, ...updates };
       setUser(updatedUser);
       localStorage.setItem('quanttun_user', JSON.stringify(updatedUser));
+      
+      console.log('Usuário atualizado com sucesso:', updatedUser);
     } catch (error) {
       console.error('Erro ao atualizar usuário:', error);
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 

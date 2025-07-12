@@ -31,14 +31,22 @@ const CreateRoute = () => {
     setIsLoading(true);
     
     try {
+      console.log('Gerando nova rota...');
       const newRoute = await pollinationsClient.generateStudyRoute(
         `${formData.subject}: ${formData.description}`,
         formData.dailyTime,
         formData.difficulty
       );
 
-      const updatedRoutes = [...(user.routes || []), newRoute];
+      console.log('Nova rota gerada:', newRoute);
+
+      // Garantir que user.routes existe e é um array
+      const currentRoutes = Array.isArray(user.routes) ? user.routes : [];
+      const updatedRoutes = [...currentRoutes, newRoute];
       
+      console.log('Rotas atualizadas para salvar:', updatedRoutes);
+      
+      // Atualizar no Supabase e no contexto
       await updateUser({ routes: updatedRoutes });
       
       toast({
