@@ -26,24 +26,30 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return user ? <>{children}</> : <Navigate to="/login" />;
 };
 
+const AppRoutes = () => {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/create-route" element={<ProtectedRoute><CreateRoute /></ProtectedRoute>} />
+        <Route path="/study-route/:routeId" element={<ProtectedRoute><StudyRoute /></ProtectedRoute>} />
+        <Route path="/study-activity/:routeId/:activityId" element={<ProtectedRoute><StudyActivity /></ProtectedRoute>} />
+        <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/create-route" element={<ProtectedRoute><CreateRoute /></ProtectedRoute>} />
-            <Route path="/study-route/:routeId" element={<ProtectedRoute><StudyRoute /></ProtectedRoute>} />
-            <Route path="/study-activity/:routeId/:activityId" element={<ProtectedRoute><StudyActivity /></ProtectedRoute>} />
-            <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <AppRoutes />
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
