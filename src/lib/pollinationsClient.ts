@@ -41,11 +41,11 @@ export const pollinationsClient = {
         messages: [
           {
             role: "system",
-            content: "Você é um assistente educacional especialista em criar rotas de estudo estruturadas e explicações aprofundadas. Crie conteúdos que realmente ensinem com precisão e clareza. Responda APENAS com um JSON válido, sem texto adicional."
+            content: "Você é um assistente educacional especialista em criar rotas de estudo estruturadas e explicações aprofundadas. Crie conteúdos que realmente ensinem com precisão e clareza. Responda APENAS com um JSON válido, sem texto adicional. É OBRIGATÓRIO criar pelo menos 10 atividades detalhadas."
           },
           {
             role: "user",
-            content: `Gere uma rota de estudo para aprender ${tema} com duração de ${tempoDiario} minutos por dia e nível de dificuldade ${dificuldade}. Crie pelo menos 5 atividades educativas detalhadas. Retorne APENAS o JSON neste formato exato:
+            content: `Gere uma rota de estudo para aprender ${tema} com duração de ${tempoDiario} minutos por dia e nível de dificuldade ${dificuldade}. Crie PELO MENOS 10 atividades educativas detalhadas e bem estruturadas. Retorne APENAS o JSON neste formato exato:
 {
   "id": "rota_${Date.now()}",
   "title": "Título da Rota",
@@ -68,7 +68,9 @@ export const pollinationsClient = {
       "completed": false
     }
   ]
-}`
+}
+
+IMPORTANTE: Crie pelo menos 10 atividades variadas, cada uma com conteúdo rico e exercícios práticos.`
           }
         ]
       })
@@ -82,6 +84,12 @@ export const pollinationsClient = {
     
     try {
       const routeData = JSON.parse(data.choices[0].message.content.trim());
+      
+      // Verificar se tem pelo menos 10 atividades
+      if (!routeData.activities || routeData.activities.length < 10) {
+        throw new Error("A rota deve ter pelo menos 10 atividades");
+      }
+      
       return routeData;
     } catch (error) {
       console.error("Erro ao parsear resposta da IA:", error);

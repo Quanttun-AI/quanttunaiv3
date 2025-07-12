@@ -3,6 +3,7 @@ interface User {
   id: string;
   name: string;
   email: string;
+  password: string;
   routes: any[];
   notes: any[];
   points: number;
@@ -25,28 +26,14 @@ export const supabaseClient = {
       throw new Error("A senha deve ter pelo menos 6 caracteres");
     }
 
-    const response = await fetch(`${supabaseUrl}/auth/v1/signup`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": supabaseKey,
-      },
-      body: JSON.stringify({
-        email,
-        password,
-        data: { name }
-      })
-    });
-
-    const authData = await response.json();
-    console.log('Resposta do signup:', authData);
-
-    if (!response.ok) {
-      throw new Error(authData.msg || authData.error_description || "Erro ao criar conta");
+    // Verificar se o usuário já existe
+    const existingUser = await this.getUser(email);
+    if (existingUser) {
+      throw new Error("Este email já está cadastrado");
     }
 
-    // Criar registro na tabela users após sucesso na autenticação
-    const userResponse = await fetch(`${supabaseUrl}/rest/v1/users`, {
+    // Criar registro na tabela users
+    const response = await fetch(`${supabaseUrl}/rest/v1/users`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -55,45 +42,48 @@ export const supabaseClient = {
         "Prefer": "return=representation",
       },
       body: JSON.stringify({
-        id: authData.user?.id || crypto.randomUUID(),
+        id: crypto.randomUUID(),
         email,
         name,
+        password, // Agora salvamos a senha no banco
         routes: [],
         notes: [],
         points: 0
       })
     });
 
-    if (!userResponse.ok) {
-      console.log('Erro ao criar registro do usuário:', await userResponse.text());
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.log('Erro ao criar registro do usuário:', errorData);
+      throw new Error("Erro ao criar conta");
     }
 
-    return authData;
+    const userData = await response.json();
+    return userData[0];
   },
 
   async signIn({ email, password }: LoginCredentials) {
     console.log('Tentando fazer login para:', email);
     
-    const response = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
-      method: "POST",
+    // Buscar usuário no banco de dados
+    const response = await fetch(`${supabaseUrl}/rest/v1/users?email=eq.${email}&password=eq.${password}&select=*`, {
       headers: {
-        "Content-Type": "application/json",
         "apikey": supabaseKey,
-      },
-      body: JSON.stringify({
-        email,
-        password
-      })
+        "Authorization": `Bearer ${supabaseKey}`,
+      }
     });
 
-    const authData = await response.json();
-    console.log('Resposta do login:', authData);
-
     if (!response.ok) {
-      throw new Error(authData.error_description || "Email ou senha incorretos");
+      throw new Error("Erro ao verificar credenciais");
     }
 
-    return authData;
+    const users = await response.json();
+    
+    if (users.length === 0) {
+      throw new Error("Email ou senha incorretos");
+    }
+
+    return users[0];
   },
 
   async getUser(email: string): Promise<User | null> {

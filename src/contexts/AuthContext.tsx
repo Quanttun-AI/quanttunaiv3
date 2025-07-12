@@ -6,6 +6,7 @@ interface User {
   id: string;
   name: string;
   email: string;
+  password: string;
   routes: any[];
   notes: any[];
   points: number;
@@ -52,8 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Iniciando processo de login...');
       
-      await supabaseClient.signIn({ email, password });
-      const userData = await supabaseClient.getUser(email);
+      const userData = await supabaseClient.signIn({ email, password });
       
       if (userData) {
         setUser(userData);
@@ -86,28 +86,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('A senha deve ter pelo menos 6 caracteres');
       }
 
-      await supabaseClient.signUp({ email, password, name });
+      const userData = await supabaseClient.signUp({ email, password, name });
       
-      // Aguardar um pouco antes de buscar os dados do usuário
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const userData = await supabaseClient.getUser(email);
       if (userData) {
         setUser(userData);
         localStorage.setItem('quanttun_user', JSON.stringify(userData));
         console.log('Registro realizado com sucesso');
       } else {
-        // Se não encontrou o usuário, criar um registro básico
-        const basicUser: User = {
-          id: crypto.randomUUID(),
-          name,
-          email,
-          routes: [],
-          notes: [],
-          points: 0
-        };
-        setUser(basicUser);
-        localStorage.setItem('quanttun_user', JSON.stringify(basicUser));
+        throw new Error('Erro ao criar conta');
       }
     } catch (error) {
       console.error('Erro no registro:', error);

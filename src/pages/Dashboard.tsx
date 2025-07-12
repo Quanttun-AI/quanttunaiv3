@@ -7,17 +7,51 @@ import { Progress } from "@/components/ui/progress";
 import { Brain, Plus, BookOpen, Trophy, Clock, Target, LogOut } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { StudyRoute } from "@/lib/pollinationsClient";
+import { useEffect, useState } from "react";
+import { supabaseClient } from "@/lib/supabaseClient";
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
+  const [routes, setRoutes] = useState<StudyRoute[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (user?.email) {
+        try {
+          const userData = await supabaseClient.getUser(user.email);
+          if (userData && userData.routes) {
+            setRoutes(userData.routes);
+            // Atualizar o contexto com os dados mais recentes
+            await updateUser({ routes: userData.routes });
+          }
+        } catch (error) {
+          console.error('Erro ao carregar dados do usuário:', error);
+        }
+      }
+      setLoading(false);
+    };
+
+    loadUserData();
+  }, [user?.email]);
 
   const handleLogout = () => {
     logout();
     navigate("/");
   };
 
-  const routes: StudyRoute[] = user?.routes || [];
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-purple-900 dark:to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <Brain className="h-8 w-8 animate-spin mx-auto mb-4 text-violet-700" />
+          <p>Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
   const totalActivities = routes.reduce((acc, route) => acc + route.activities.length, 0);
   const completedActivities = routes.reduce((acc, route) => acc + route.completedActivities, 0);
   const progressPercentage = totalActivities > 0 ? (completedActivities / totalActivities) * 100 : 0;
