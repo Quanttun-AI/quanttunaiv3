@@ -1,4 +1,3 @@
-
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,7 @@ import { useEffect, useState } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 
 const Dashboard = () => {
-  const { user, logout, updateUser } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [routes, setRoutes] = useState<StudyRoute[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,8 +22,6 @@ const Dashboard = () => {
           const userData = await supabaseClient.getUser(user.email);
           if (userData && userData.routes) {
             setRoutes(userData.routes);
-            // Atualizar o contexto com os dados mais recentes
-            await updateUser({ routes: userData.routes });
           }
         } catch (error) {
           console.error('Erro ao carregar dados do usuário:', error);
