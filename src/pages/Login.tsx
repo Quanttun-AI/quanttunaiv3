@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Brain, Loader2 } from "lucide-react";
+import { Brain, Loader2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -17,9 +17,41 @@ const Login = () => {
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [registerForm, setRegisterForm] = useState({ name: "", email: "", password: "" });
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const validateForm = (type: 'login' | 'register') => {
+    const newErrors: { [key: string]: string } = {};
+    
+    if (type === 'register') {
+      if (!registerForm.name.trim()) {
+        newErrors.name = 'Nome é obrigatório';
+      }
+      if (!registerForm.email.trim()) {
+        newErrors.email = 'Email é obrigatório';
+      } else if (!/\S+@\S+\.\S+/.test(registerForm.email)) {
+        newErrors.email = 'Email inválido';
+      }
+      if (registerForm.password.length < 6) {
+        newErrors.password = 'A senha deve ter pelo menos 6 caracteres';
+      }
+    } else {
+      if (!loginForm.email.trim()) {
+        newErrors.email = 'Email é obrigatório';
+      }
+      if (!loginForm.password.trim()) {
+        newErrors.password = 'Senha é obrigatória';
+      }
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm('login')) return;
+    
     setIsLoading(true);
     
     try {
@@ -29,10 +61,11 @@ const Login = () => {
         description: "Bem-vindo de volta ao Quanttun AI."
       });
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Erro no login:', error);
       toast({
         title: "Erro no login",
-        description: "Verifique suas credenciais e tente novamente.",
+        description: error.message || "Verifique suas credenciais e tente novamente.",
         variant: "destructive"
       });
     } finally {
@@ -42,6 +75,9 @@ const Login = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm('register')) return;
+    
     setIsLoading(true);
     
     try {
@@ -51,10 +87,11 @@ const Login = () => {
         description: "Bem-vindo ao Quanttun AI."
       });
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Erro no registro:', error);
       toast({
         title: "Erro ao criar conta",
-        description: "Tente novamente com dados diferentes.",
+        description: error.message || "Tente novamente com dados diferentes.",
         variant: "destructive"
       });
     } finally {
@@ -103,8 +140,15 @@ const Login = () => {
                       placeholder="seu@email.com"
                       value={loginForm.email}
                       onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                      className={errors.email ? "border-red-500" : ""}
                       required
                     />
+                    {errors.email && (
+                      <div className="flex items-center gap-2 text-sm text-red-600">
+                        <AlertCircle className="h-4 w-4" />
+                        {errors.email}
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">Senha</Label>
@@ -114,8 +158,15 @@ const Login = () => {
                       placeholder="••••••••"
                       value={loginForm.password}
                       onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                      className={errors.password ? "border-red-500" : ""}
                       required
                     />
+                    {errors.password && (
+                      <div className="flex items-center gap-2 text-sm text-red-600">
+                        <AlertCircle className="h-4 w-4" />
+                        {errors.password}
+                      </div>
+                    )}
                   </div>
                   <Button type="submit" className="w-full quantum-gradient" disabled={isLoading}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -143,8 +194,15 @@ const Login = () => {
                       placeholder="Seu nome completo"
                       value={registerForm.name}
                       onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
+                      className={errors.name ? "border-red-500" : ""}
                       required
                     />
+                    {errors.name && (
+                      <div className="flex items-center gap-2 text-sm text-red-600">
+                        <AlertCircle className="h-4 w-4" />
+                        {errors.name}
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="register-email">Email</Label>
@@ -154,8 +212,15 @@ const Login = () => {
                       placeholder="seu@email.com"
                       value={registerForm.email}
                       onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
+                      className={errors.email ? "border-red-500" : ""}
                       required
                     />
+                    {errors.email && (
+                      <div className="flex items-center gap-2 text-sm text-red-600">
+                        <AlertCircle className="h-4 w-4" />
+                        {errors.email}
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="register-password">Senha</Label>
@@ -165,8 +230,18 @@ const Login = () => {
                       placeholder="••••••••"
                       value={registerForm.password}
                       onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                      className={errors.password ? "border-red-500" : ""}
                       required
                     />
+                    {errors.password && (
+                      <div className="flex items-center gap-2 text-sm text-red-600">
+                        <AlertCircle className="h-4 w-4" />
+                        {errors.password}
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Mínimo de 6 caracteres
+                    </p>
                   </div>
                   <Button type="submit" className="w-full quantum-gradient" disabled={isLoading}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

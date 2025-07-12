@@ -37,7 +37,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const storedUser = localStorage.getItem('quanttun_user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('Erro ao carregar usuário do localStorage:', error);
+        localStorage.removeItem('quanttun_user');
+      }
     }
     setLoading(false);
   }, []);
@@ -45,13 +50,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
+      console.log('Iniciando processo de login...');
+      
       await supabaseClient.signIn({ email, password });
       const userData = await supabaseClient.getUser(email);
+      
       if (userData) {
         setUser(userData);
         localStorage.setItem('quanttun_user', JSON.stringify(userData));
+        console.log('Login realizado com sucesso');
+      } else {
+        throw new Error('Dados do usuário não encontrados');
       }
     } catch (error) {
+      console.error('Erro no login:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -61,13 +73,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (email: string, password: string, name: string) => {
     setLoading(true);
     try {
+      console.log('Iniciando processo de registro...');
+      
+      // Validar dados antes de enviar
+      if (!name.trim()) {
+        throw new Error('Nome é obrigatório');
+      }
+      if (!email.trim()) {
+        throw new Error('Email é obrigatório');
+      }
+      if (password.length < 6) {
+        throw new Error('A senha deve ter pelo menos 6 caracteres');
+      }
+
       await supabaseClient.signUp({ email, password, name });
+      
+      // Aguardar um pouco antes de buscar os dados do usuário
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       const userData = await supabaseClient.getUser(email);
       if (userData) {
         setUser(userData);
         localStorage.setItem('quanttun_user', JSON.stringify(userData));
+        console.log('Registro realizado com sucesso');
+      } else {
+        // Se não encontrou o usuário, criar um registro básico
+        const basicUser: User = {
+          id: crypto.randomUUID(),
+          name,
+          email,
+          routes: [],
+          notes: [],
+          points: 0
+        };
+        setUser(basicUser);
+        localStorage.setItem('quanttun_user', JSON.stringify(basicUser));
       }
     } catch (error) {
+      console.error('Erro no registro:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -75,6 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    console.log('Fazendo logout...');
     setUser(null);
     localStorage.removeItem('quanttun_user');
   };
@@ -84,11 +128,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     setLoading(true);
     try {
+      console.log('Atualizando dados do usuário...');
+      
       await supabaseClient.updateUser(user.email, updates);
       const updatedUser = { ...user, ...updates };
       setUser(updatedUser);
       localStorage.setItem('quanttun_user', JSON.stringify(updatedUser));
     } catch (error) {
+      console.error('Erro ao atualizar usuário:', error);
       throw error;
     } finally {
       setLoading(false);
